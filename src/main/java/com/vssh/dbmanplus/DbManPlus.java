@@ -205,10 +205,10 @@ abstract public class DbManPlus {
      * Perform database operations in one transaction.
      * @param transactionFunc Pass the function as callable interface
      * @return true if successful, else false
-     * @throws SQLException
+     * @throws Exception
      */
     @CallSuper
-    public boolean doTransaction(Callable<Boolean> transactionFunc) throws SQLException {
+    public boolean doTransaction(Callable<Boolean> transactionFunc) throws Exception {
         boolean successful = false;
         /*if (db != null && db.inTransaction()) {
             throw new SQLException("Database already in transaction");
@@ -222,9 +222,6 @@ abstract public class DbManPlus {
                 database.setTransactionSuccessful();
                 successful = true;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new SQLException("Transaction failed");
         } finally {
             database.endTransaction();
             this.close();
@@ -237,10 +234,9 @@ abstract public class DbManPlus {
      * @param tableName
      * @param initialValues
      * @return row ID if successful, else -1
-     * @throws SQLException
      */
     @CallSuper
-    public long insert(String tableName, ContentValues initialValues) throws SQLException {
+    public long insert(String tableName, ContentValues initialValues) {
         return this.insertWithOnConflict(tableName, initialValues, SQLiteDatabase.CONFLICT_NONE);
     }
 
@@ -250,10 +246,9 @@ abstract public class DbManPlus {
      * @param initialValues
      * @param conflictAlgorithm
      * @return row ID if successful, else -1
-     * @throws SQLException
      */
     @CallSuper
-    public long insertWithOnConflict(String tableName, ContentValues initialValues, int conflictAlgorithm) throws SQLException {
+    public long insertWithOnConflict(String tableName, ContentValues initialValues, int conflictAlgorithm) {
         long rowId = -1;
         SQLiteDatabase database;
         boolean inTransaction = false;
@@ -264,10 +259,6 @@ abstract public class DbManPlus {
             database = this.open();
         }
         try {
-            if (initialValues == null) {
-                throw new SQLException("Can not create empty row");
-            }
-
             rowId = database.insertWithOnConflict(tableName, null, initialValues, conflictAlgorithm);
 
         } finally {
@@ -283,16 +274,9 @@ abstract public class DbManPlus {
      * @param tableName
      * @param values
      * @return number of rows inserted
-     * @throws SQLException
      */
     @CallSuper
-    public int bulkInsert(String tableName, ContentValues[] values) throws SQLException {
-        //Long now = Long.valueOf(System.currentTimeMillis());
-        // Make sure that the fields are all set
-        /*if (db!=null && db.inTransaction()) {
-            throw new SQLException("Database already in transaction");
-        }*/
-
+    public int bulkInsert(String tableName, ContentValues[] values) {
         int numInserted = 0;
         SQLiteDatabase database = this.open();
         database.beginTransaction();
@@ -315,10 +299,9 @@ abstract public class DbManPlus {
      * @param selection
      * @param selectionArgs
      * @return number of deleted rows
-     * @throws SQLException
      */
     @CallSuper
-    public int delete(String tableName, String selection, String[] selectionArgs) throws SQLException {
+    public int delete(String tableName, String selection, String[] selectionArgs) {
         SQLiteDatabase database;
         boolean inTransaction = false;
         if (this.inTransaction()) {
@@ -330,9 +313,6 @@ abstract public class DbManPlus {
         int count;
         try {
             count = database.delete(tableName, selection, selectionArgs);
-            if (count < 0) {
-                throw new SQLException("Can not delete from " + tableName);
-            }
         } finally {
             if (!inTransaction) {
                 this.close();
@@ -348,10 +328,9 @@ abstract public class DbManPlus {
      * @param selection
      * @param selectionArgs
      * @return number of updated rows
-     * @throws SQLException
      */
     @CallSuper
-    public int update(String tableName, ContentValues values, String selection, String[] selectionArgs) throws SQLException {
+    public int update(String tableName, ContentValues values, String selection, String[] selectionArgs) {
         return this.updateWithOnConflict(tableName, values, selection, selectionArgs, SQLiteDatabase.CONFLICT_NONE);
     }
 
@@ -363,10 +342,9 @@ abstract public class DbManPlus {
      * @param selectionArgs
      * @param conflictAlgorithm
      * @return number of rows updated
-     * @throws SQLException
      */
     @CallSuper
-    public int updateWithOnConflict(String tableName, ContentValues values, String selection, String[] selectionArgs, int conflictAlgorithm) throws SQLException {
+    public int updateWithOnConflict(String tableName, ContentValues values, String selection, String[] selectionArgs, int conflictAlgorithm) {
         SQLiteDatabase database;
         boolean inTransaction = false;
         if (this.inTransaction()) {
@@ -378,9 +356,6 @@ abstract public class DbManPlus {
         int count;
         try {
             count = database.updateWithOnConflict(tableName, values, selection, selectionArgs, conflictAlgorithm);
-            if (count < 0) {
-                throw new SQLException("Can not update " + tableName);
-            }
         } finally {
             if (!inTransaction) {
                 this.close();

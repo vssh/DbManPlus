@@ -13,7 +13,7 @@ import android.util.Log;
  */
 public abstract class DbProto {
     private DbManPlus mDbManager;
-    private static final String TAG = "ReactDbLib:DbProto";
+    //private static final String TAG = "ReactDbLib:DbProto";
 
     public DbProto(DbManPlus dbManager) {
         this.mDbManager = dbManager;
@@ -39,16 +39,8 @@ public abstract class DbProto {
      */
     public long insert(ContentValues values) {
         long result = -1;
-        try {
-            if(this.continueInsert(values)) {
-                result = mDbManager.insert(this.getTableName(), values);
-            }
-            else {
-                throw new SQLException("Values exception: check values to be inserted");
-            }
-        } catch (SQLException | IllegalArgumentException e){
-            Log.e(TAG, e.getMessage());
-            e.printStackTrace();
+        if(this.continueInsert(values)) {
+            result = mDbManager.insert(this.getTableName(), values);
         }
         return result;
     }
@@ -59,14 +51,7 @@ public abstract class DbProto {
      * @return number of rows
      */
     public int bulkInsert(ContentValues[] values) {
-        int result = -1;
-        try {
-            result = mDbManager.bulkInsert(this.getTableName(), values);
-        } catch (SQLException | IllegalArgumentException e) {
-            Log.e(TAG, e.getMessage());
-            e.printStackTrace();
-        }
-        return result;
+        return mDbManager.bulkInsert(this.getTableName(), values);
     }
 
     /**
@@ -77,14 +62,7 @@ public abstract class DbProto {
      * @return number of rows
      */
     public int update(ContentValues values, String where, String[] whereArgs) {
-        int result = -1;
-        try {
-            return mDbManager.update(this.getTableName(), values, where, whereArgs);
-        } catch (SQLException | IllegalArgumentException e) {
-            Log.e(TAG, e.getMessage());
-            e.printStackTrace();
-        }
-        return result;
+        return mDbManager.update(this.getTableName(), values, where, whereArgs);
     }
 
     /**
@@ -94,14 +72,7 @@ public abstract class DbProto {
      * @return number of rows
      */
     public int delete(String where, String[] whereArgs) {
-        int result = -1;
-        try {
-            return mDbManager.delete(this.getTableName(), where, whereArgs);
-        } catch (SQLException e) {
-            Log.e(TAG, e.getMessage());
-            e.printStackTrace();
-        }
-        return result;
+        return mDbManager.delete(this.getTableName(), where, whereArgs);
     }
 
     /**
@@ -129,24 +100,6 @@ public abstract class DbProto {
      */
     public Cursor query(String[] projection, String where, String[] whereArgs, @Nullable String groupBy,
                         @Nullable String having, String sortOrder, @Nullable String limit) {
-        Cursor c = null;
-        try {
-            c = mDbManager.query(this.getTableName(), projection, where, whereArgs, groupBy, having, sortOrder, limit);
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-            e.printStackTrace();
-        }
-        return c;
+        return mDbManager.query(this.getTableName(), projection, where, whereArgs, groupBy, having, sortOrder, limit);
     }
-
-    /*public Cursor rawQuery(String query, String[] whereArgs) {
-        Cursor c = null;
-        try {
-            return mDbManager.rawQuery(query, whereArgs);
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-            e.printStackTrace();
-        }
-        return c;
-    }*/
 }
