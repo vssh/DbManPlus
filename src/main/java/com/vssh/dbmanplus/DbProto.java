@@ -26,15 +26,17 @@ public abstract class DbProto {
     public abstract String getTableName();
 
     /**
-     * Check if values should be inserted into the databse
-     * @param values
+     * Check if values should be inserted into the database
+     * @param values a map from column names to new column values. null is a
+     *            valid value that will be translated to NULL.
      * @return true, if it should continue to insert
      */
     public abstract boolean continueInsert(ContentValues values);
 
     /**
      * Insert into this table
-     * @param values
+     * @param values a map from column names to new column values. null is a
+     *            valid value that will be translated to NULL.
      * @return row ID if successful, else -1
      */
     public long insert(ContentValues values) {
@@ -47,7 +49,8 @@ public abstract class DbProto {
 
     /**
      * Insert multiple rows as one transaction
-     * @param values
+     * @param values a map from column names to new column values. null is a
+     *            valid value that will be translated to NULL.
      * @return number of rows
      */
     public int bulkInsert(ContentValues[] values) {
@@ -55,10 +58,14 @@ public abstract class DbProto {
     }
 
     /**
-     * Uppdate rows in this table
-     * @param values
-     * @param where
-     * @param whereArgs
+     * Update rows in this table
+     * @param values a map from column names to new column values. null is a
+     *            valid value that will be translated to NULL.
+     * @param where the optional WHERE clause to apply when updating.
+     *            Passing null will update all rows.
+     * @param whereArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
      * @return number of rows
      */
     public int update(ContentValues values, String where, String[] whereArgs) {
@@ -67,8 +74,11 @@ public abstract class DbProto {
 
     /**
      * Delete from this table
-     * @param where
-     * @param whereArgs
+     * @param where the optional WHERE clause to apply when deleting.
+     *            Passing null will update all rows.
+     * @param whereArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
      * @return number of rows
      */
     public int delete(String where, String[] whereArgs) {
@@ -77,10 +87,18 @@ public abstract class DbProto {
 
     /**
      * Query this table
-     * @param projection
-     * @param where
-     * @param whereArgs
-     * @param sortOrder
+     * @param projection A list of which columns to return. Passing
+     *   null will return all columns, which is discouraged to prevent
+     *   reading data from storage that isn't going to be used.
+     * @param where A filter declaring which rows to return,
+     *   formatted as an SQL WHERE clause (excluding the WHERE
+     *   itself). Passing null will return all rows for the given URL.
+     * @param whereArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
+     * @param sortOrder How to order the rows, formatted as an SQL
+     *   ORDER BY clause (excluding the ORDER BY itself). Passing null
+     *   will use the default sort order, which may be unordered.
      * @return Cursor
      */
     public Cursor query(String[] projection, String where, String[] whereArgs, String sortOrder) {
@@ -89,13 +107,28 @@ public abstract class DbProto {
 
     /**
      * Query this table
-     * @param projection
-     * @param where
-     * @param whereArgs
-     * @param groupBy
-     * @param having
-     * @param sortOrder
-     * @param limit
+     * @param projection A list of which columns to return. Passing
+     *   null will return all columns, which is discouraged to prevent
+     *   reading data from storage that isn't going to be used.
+     * @param where A filter declaring which rows to return,
+     *   formatted as an SQL WHERE clause (excluding the WHERE
+     *   itself). Passing null will return all rows for the given URL.
+     * @param whereArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
+     * @param groupBy A filter declaring how to group rows, formatted
+     *   as an SQL GROUP BY clause (excluding the GROUP BY
+     *   itself). Passing null will cause the rows to not be grouped.
+     * @param having A filter declare which row groups to include in
+     *   the cursor, if row grouping is being used, formatted as an
+     *   SQL HAVING clause (excluding the HAVING itself).  Passing
+     *   null will cause all row groups to be included, and is
+     *   required when row grouping is not being used.
+     * @param sortOrder How to order the rows, formatted as an SQL
+     *   ORDER BY clause (excluding the ORDER BY itself). Passing null
+     *   will use the default sort order, which may be unordered.
+     * @param limit Limits the number of rows returned by the query,
+     *   formatted as LIMIT clause. Passing null denotes no LIMIT clause.
      * @return Cursor
      */
     public Cursor query(String[] projection, String where, String[] whereArgs, @Nullable String groupBy,

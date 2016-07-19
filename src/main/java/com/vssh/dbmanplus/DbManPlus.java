@@ -5,7 +5,7 @@ package com.vssh.dbmanplus;
  *
  *  Extend this class and use it as an SQLiteOpenHelper class
  *
- *  Based on DatabaseManager by JakarCo implemeted at <a href="http://androidslitelibrary.com">Android SQLite Libray</a>
+ *  Based on DatabaseManager by JakarCo implemented at <a href="http://androidslitelibrary.com">Android SQLite Library</a>
  */
 
 import android.content.ContentValues;
@@ -77,9 +77,9 @@ abstract public class DbManPlus {
             return counter.get();
         }
 
-        public int getCounter() {
+        /*public int getCounter() {
             return counter.get();
-        }
+        }*/
 
         @Override
         public void onCreate(SQLiteDatabase db) {
@@ -107,7 +107,7 @@ abstract public class DbManPlus {
         }
     }
 
-    private static final ConcurrentHashMap<String, DBSQLiteOpenHelper> dbMap = new ConcurrentHashMap<String, DBSQLiteOpenHelper>();
+    private static final ConcurrentHashMap<String, DBSQLiteOpenHelper> dbMap = new ConcurrentHashMap<>();
 
     //private Object dbLockObject;
 
@@ -231,8 +231,10 @@ abstract public class DbManPlus {
 
     /**
      * Insert a row into the database
-     * @param tableName
-     * @param initialValues
+     * @param tableName the table to insert the row into
+     * @param initialValues this map contains the initial column values for the
+     *            row. The keys should be the column names and the values the
+     *            column values
      * @return row ID if successful, else -1
      */
     @CallSuper
@@ -242,9 +244,11 @@ abstract public class DbManPlus {
 
     /**
      * Insert a row into the database
-     * @param tableName
-     * @param initialValues
-     * @param conflictAlgorithm
+     * @param tableName the table to insert the row into
+     * @param initialValues this map contains the initial column values for the
+     *            row. The keys should be the column names and the values the
+     *            column values
+     * @param conflictAlgorithm for insert conflict resolver
      * @return row ID if successful, else -1
      */
     @CallSuper
@@ -271,8 +275,9 @@ abstract public class DbManPlus {
 
     /**
      * Insert multiple rows at once as a single transaction
-     * @param tableName
-     * @param values
+     * @param tableName the table to update in
+     * @param values a map from column names to new column values. null is a
+     *            valid value that will be translated to NULL.
      * @return number of rows inserted
      */
     @CallSuper
@@ -295,9 +300,12 @@ abstract public class DbManPlus {
 
     /**
      * Delete from database
-     * @param tableName
-     * @param selection
-     * @param selectionArgs
+     * @param tableName the table to update in
+     * @param selection the optional WHERE clause to apply when deleting.
+     *            Passing null will update all rows.
+     * @param selectionArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
      * @return number of deleted rows
      */
     @CallSuper
@@ -323,10 +331,14 @@ abstract public class DbManPlus {
 
     /**
      * Update rows in the database
-     * @param tableName
-     * @param values
-     * @param selection
-     * @param selectionArgs
+     * @param tableName the table to update in
+     * @param values a map from column names to new column values. null is a
+     *            valid value that will be translated to NULL.
+     * @param selection the optional WHERE clause to apply when updating.
+     *            Passing null will update all rows.
+     * @param selectionArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
      * @return number of updated rows
      */
     @CallSuper
@@ -336,11 +348,15 @@ abstract public class DbManPlus {
 
     /**
      * Update rows in the database
-     * @param tableName
-     * @param values
-     * @param selection
-     * @param selectionArgs
-     * @param conflictAlgorithm
+     * @param tableName the table to update in
+     * @param values a map from column names to new column values. null is a
+     *            valid value that will be translated to NULL.
+     * @param selection the optional WHERE clause to apply when updating.
+     *            Passing null will update all rows.
+     * @param selectionArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
+     * @param conflictAlgorithm for update conflict resolver
      * @return number of rows updated
      */
     @CallSuper
@@ -366,11 +382,20 @@ abstract public class DbManPlus {
 
     /**
      * Query the database
-     * @param tableNames
-     * @param projection
-     * @param selection
-     * @param selectionArgs
-     * @param sortOrder
+     * @param tableNames tables to query
+     * @param projection A list of which columns to return. Passing
+     *   null will return all columns, which is discouraged to prevent
+     *   reading data from storage that isn't going to be used.
+     * @param selection A filter declaring which rows to return,
+     *   formatted as an SQL WHERE clause (excluding the WHERE
+     *   itself). Passing null will return all rows for the given URL.
+     * @param selectionArgs You may include ?s in selection, which
+     *   will be replaced by the values from selectionArgs, in order
+     *   that they appear in the selection. The values will be bound
+     *   as Strings.
+     * @param sortOrder How to order the rows, formatted as an SQL
+     *   ORDER BY clause (excluding the ORDER BY itself). Passing null
+     *   will use the default sort order, which may be unordered.
      * @return Cursor
      */
     @CallSuper
@@ -380,14 +405,30 @@ abstract public class DbManPlus {
 
     /**
      * Query the database
-     * @param tableNames
-     * @param projection
-     * @param selection
-     * @param selectionArgs
-     * @param groupBy
-     * @param having
-     * @param sortOrder
-     * @param limit
+     * @param tableNames tables to query
+     * @param projection A list of which columns to return. Passing
+     *   null will return all columns, which is discouraged to prevent
+     *   reading data from storage that isn't going to be used.
+     * @param selection A filter declaring which rows to return,
+     *   formatted as an SQL WHERE clause (excluding the WHERE
+     *   itself). Passing null will return all rows for the given URL.
+     * @param selectionArgs You may include ?s in selection, which
+     *   will be replaced by the values from selectionArgs, in order
+     *   that they appear in the selection. The values will be bound
+     *   as Strings.
+     * @param groupBy A filter declaring how to group rows, formatted
+     *   as an SQL GROUP BY clause (excluding the GROUP BY
+     *   itself). Passing null will cause the rows to not be grouped.
+     * @param having A filter declare which row groups to include in
+     *   the cursor, if row grouping is being used, formatted as an
+     *   SQL HAVING clause (excluding the HAVING itself).  Passing
+     *   null will cause all row groups to be included, and is
+     *   required when row grouping is not being used.
+     * @param sortOrder How to order the rows, formatted as an SQL
+     *   ORDER BY clause (excluding the ORDER BY itself). Passing null
+     *   will use the default sort order, which may be unordered.
+     * @param limit Limits the number of rows returned by the query,
+     *   formatted as LIMIT clause. Passing null denotes no LIMIT clause.
      * @return Cursor
      */
     @CallSuper
@@ -412,8 +453,10 @@ abstract public class DbManPlus {
 
     /**
      * Query the database using a raw query
-     * @param sql
-     * @param selectionArgs
+     * @param sql the SQL query. The SQL string must not be ; terminated
+     * @param selectionArgs You may include ?s in where clause in the query,
+     *     which will be replaced by the values from selectionArgs. The
+     *     values will be bound as Strings.
      * @return Cursor
      */
     @CallSuper
