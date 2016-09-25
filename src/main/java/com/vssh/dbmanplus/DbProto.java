@@ -6,6 +6,9 @@ import android.database.SQLException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by varun on 24.08.15.
  *
@@ -135,4 +138,94 @@ public abstract class DbProto {
                         @Nullable String having, String sortOrder, @Nullable String limit) {
         return mDbManager.query(this.getTableName(), projection, where, whereArgs, groupBy, having, sortOrder, limit);
     }
+
+    /**
+     * Query table (@link #query) and get a list of objects as defined in {@link #cursorToList}
+     *@param projection A list of which columns to return. Passing
+     *   null will return all columns, which is discouraged to prevent
+     *   reading data from storage that isn't going to be used.
+     * @param where A filter declaring which rows to return,
+     *   formatted as an SQL WHERE clause (excluding the WHERE
+     *   itself). Passing null will return all rows for the given URL.
+     * @param whereArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
+     * @param sortOrder How to order the rows, formatted as an SQL
+     *   ORDER BY clause (excluding the ORDER BY itself). Passing null
+     *   will use the default sort order, which may be unordered.
+     * @return list of Objects returned by {@link #itemFromCursor}
+     */
+    public ArrayList queryAsList(String[] projection, String where, String[] whereArgs, String sortOrder) {
+        Cursor cursor = this.query(projection, where, whereArgs, null, null, sortOrder, null);
+        ArrayList list = cursorToList(cursor);
+        cursor.close();
+
+        return list;
+    }
+
+    /**
+     * Query table (@link #query) and get a list of objects as defined in {@link #cursorToList}
+     * @param projection A list of which columns to return. Passing
+     *   null will return all columns, which is discouraged to prevent
+     *   reading data from storage that isn't going to be used.
+     * @param where A filter declaring which rows to return,
+     *   formatted as an SQL WHERE clause (excluding the WHERE
+     *   itself). Passing null will return all rows for the given URL.
+     * @param whereArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
+     * @param groupBy A filter declaring how to group rows, formatted
+     *   as an SQL GROUP BY clause (excluding the GROUP BY
+     *   itself). Passing null will cause the rows to not be grouped.
+     * @param having A filter declare which row groups to include in
+     *   the cursor, if row grouping is being used, formatted as an
+     *   SQL HAVING clause (excluding the HAVING itself).  Passing
+     *   null will cause all row groups to be included, and is
+     *   required when row grouping is not being used.
+     * @param sortOrder How to order the rows, formatted as an SQL
+     *   ORDER BY clause (excluding the ORDER BY itself). Passing null
+     *   will use the default sort order, which may be unordered.
+     * @param limit Limits the number of rows returned by the query,
+     *   formatted as LIMIT clause. Passing null denotes no LIMIT clause.
+     * @return list of Objects returned by {@link #itemFromCursor}
+     */
+    public ArrayList queryAsList(String[] projection, String where, String[] whereArgs, @Nullable String groupBy,
+                        @Nullable String having, String sortOrder, @Nullable String limit) {
+        Cursor cursor = mDbManager.query(this.getTableName(), projection, where, whereArgs, groupBy, having, sortOrder, limit);
+        ArrayList list = cursorToList(cursor);
+        cursor.close();
+
+        return list;
+    }
+
+    /**
+     * Retrieve an Object list (as described in {@link #itemFromCursor})
+     * @param cursor input cursor
+     * @return list of Objects returned by {@link #itemFromCursor}
+     */
+    public ArrayList cursorToList(Cursor cursor) {
+        ArrayList list = new ArrayList<>();
+        if(cursor.moveToFirst()) {
+            while (!cursor.isAfterLast()) {
+                int pos = cursor.getPosition();
+
+                list.add(itemFromCursor(cursor));
+
+                if(pos == cursor.getPosition()) {
+                    cursor.moveToNext();
+                }
+                else {
+                    cursor.moveToPosition(pos+1);
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Implement this function to allow forming a list of objects from cursor
+     * @param cursor input cursor
+     * @return object of desired type
+     */
+    protected abstract Object itemFromCursor(Cursor cursor);
 }

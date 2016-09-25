@@ -63,16 +63,16 @@ abstract public class DbManPlus {
         DbManPlus dbManPlus;
         private AtomicInteger counter = new AtomicInteger(0);
 
-        public DBSQLiteOpenHelper(Context context, String name, int version, DbManPlus dbManPlus) {
+        DBSQLiteOpenHelper(Context context, String name, int version, DbManPlus dbManPlus) {
             super(context, name, null, version);
             this.dbManPlus = dbManPlus;
         }
 
-        public int addConnection() {
+        int addConnection() {
             return counter.incrementAndGet();
         }
 
-        public int removeConnection() {
+        int removeConnection() {
             if (counter.get() > 0) return counter.decrementAndGet();
             return counter.get();
         }
@@ -150,15 +150,6 @@ abstract public class DbManPlus {
     public boolean isOpen() {
         return (db != null && db.isOpen());
     }
-
-    /**
-     * Check if the SQliteDatabase is in transaction
-     * @return true if in transaction, else false
-     */
-    public boolean inTransaction() {
-        return (db != null && db.isOpen() && db.inTransaction());
-    }
-
 
     /**
      * Lowers the DB counter by 1 for any {@link DbManPlus}s referencing the same DB on disk
@@ -254,21 +245,12 @@ abstract public class DbManPlus {
     @CallSuper
     public long insertWithOnConflict(String tableName, ContentValues initialValues, int conflictAlgorithm) {
         long rowId = -1;
-        SQLiteDatabase database;
-        boolean inTransaction = false;
-        if (this.inTransaction()) {
-            database = db;
-            inTransaction = true;
-        } else {
-            database = this.open();
-        }
+        SQLiteDatabase database = this.open();
         try {
             rowId = database.insertWithOnConflict(tableName, null, initialValues, conflictAlgorithm);
 
         } finally {
-            if (!inTransaction) {
-                this.close();
-            }
+            this.close();
         }
         return rowId;
     }
@@ -310,21 +292,13 @@ abstract public class DbManPlus {
      */
     @CallSuper
     public int delete(String tableName, String selection, String[] selectionArgs) {
-        SQLiteDatabase database;
-        boolean inTransaction = false;
-        if (this.inTransaction()) {
-            database = db;
-            inTransaction = true;
-        } else {
-            database = this.open();
-        }
+        SQLiteDatabase database = this.open();
+
         int count;
         try {
             count = database.delete(tableName, selection, selectionArgs);
         } finally {
-            if (!inTransaction) {
-                this.close();
-            }
+            this.close();
         }
         return count;
     }
@@ -361,21 +335,12 @@ abstract public class DbManPlus {
      */
     @CallSuper
     public int updateWithOnConflict(String tableName, ContentValues values, String selection, String[] selectionArgs, int conflictAlgorithm) {
-        SQLiteDatabase database;
-        boolean inTransaction = false;
-        if (this.inTransaction()) {
-            database = db;
-            inTransaction = true;
-        } else {
-            database = this.open();
-        }
+        SQLiteDatabase database = this.open();
         int count;
         try {
             count = database.updateWithOnConflict(tableName, values, selection, selectionArgs, conflictAlgorithm);
         } finally {
-            if (!inTransaction) {
-                this.close();
-            }
+            this.close();
         }
         return count;
     }
@@ -434,21 +399,11 @@ abstract public class DbManPlus {
     @CallSuper
     public Cursor query(String tableNames, String[] projection, String selection, String[] selectionArgs, String groupBy,
                         String having, String sortOrder, String limit) {
-        SQLiteDatabase database;
-        boolean inTransaction = false;
-        if (this.inTransaction()) {
-            database = db;
-            inTransaction = true;
-        } else {
-            database = this.open();
-        }
+        SQLiteDatabase database = this.open();
+
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
         qb.setTables(tableNames);
-        if (!inTransaction) {
-            return new DbManCursor(qb.query(database, projection, selection, selectionArgs, groupBy, having, sortOrder, limit), this);
-        } else {
-            return qb.query(database, projection, selection, selectionArgs, groupBy, having, sortOrder, limit);
-        }
+        return new DbManCursor(qb.query(database, projection, selection, selectionArgs, groupBy, having, sortOrder, limit), this);
     }
 
     /**
@@ -461,18 +416,7 @@ abstract public class DbManPlus {
      */
     @CallSuper
     public Cursor rawQuery(String sql, String[] selectionArgs) {
-        SQLiteDatabase database;
-        boolean inTransaction = false;
-        if (this.inTransaction()) {
-            database = db;
-            inTransaction = true;
-        } else {
-            database = this.open();
-        }
-        if (!inTransaction) {
-            return new DbManCursor(database.rawQuery(sql, selectionArgs), this);
-        } else {
-            return database.rawQuery(sql, selectionArgs);
-        }
+        SQLiteDatabase database = this.open();
+        return new DbManCursor(database.rawQuery(sql, selectionArgs), this);
     }
 }
