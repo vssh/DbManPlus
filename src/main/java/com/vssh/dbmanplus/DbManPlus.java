@@ -11,7 +11,6 @@ package com.vssh.dbmanplus;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 
 import java.util.concurrent.Callable;
@@ -109,14 +108,11 @@ abstract public class DbManPlus {
 
     private static final ConcurrentHashMap<String, DBSQLiteOpenHelper> dbMap = new ConcurrentHashMap<>();
 
-    //private Object dbLockObject;
-
     private static final Object managerLockObject = new Object();
 
 
     private DBSQLiteOpenHelper sqLiteOpenHelper;
     private SQLiteDatabase db;
-    //private Context context;
 
     /**
      * Instantiate a new DB Helper.
@@ -133,13 +129,10 @@ abstract public class DbManPlus {
             if (sqLiteOpenHelper == null) {
                 sqLiteOpenHelper = new DBSQLiteOpenHelper(context, name, version, this);
                 dbMap.put(dbPath, sqLiteOpenHelper);
-                //dbLockObject = new Object();
-                //mSubjectList = new ArrayList<Subject>();
             }
             //SQLiteOpenHelper class caches the SQLiteDatabase, so this will be the same SQLiteDatabase object every time
             db = sqLiteOpenHelper.getWritableDatabase();
         }
-        //this.context = context.getApplicationContext();
     }
 
     /**
@@ -161,7 +154,6 @@ abstract public class DbManPlus {
     protected boolean close() {
         synchronized (managerLockObject) {
             int count = sqLiteOpenHelper.removeConnection();
-            //Log.w("LockCount--", "" + count);
             if (count == 0) {
                 try {
                     if (db.inTransaction()) db.endTransaction();
@@ -184,7 +176,6 @@ abstract public class DbManPlus {
     protected SQLiteDatabase open() {
         synchronized (managerLockObject) {
             int count = sqLiteOpenHelper.addConnection();
-            //Log.w("LockCount++", "" + count);
             if (db == null || !db.isOpen()) {
                 db = sqLiteOpenHelper.getWritableDatabase();
             }
@@ -201,9 +192,6 @@ abstract public class DbManPlus {
     @CallSuper
     public boolean doTransaction(Callable<Boolean> transactionFunc) throws Exception {
         boolean successful = false;
-        /*if (db != null && db.inTransaction()) {
-            throw new SQLException("Database already in transaction");
-        }*/
         SQLiteDatabase database = this.open();
         database.beginTransaction();
 
@@ -403,7 +391,7 @@ abstract public class DbManPlus {
 
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
         qb.setTables(tableNames);
-        return new DbManCursor(qb.query(database, projection, selection, selectionArgs, groupBy, having, sortOrder, limit), this);
+        return new DbCursor(qb.query(database, projection, selection, selectionArgs, groupBy, having, sortOrder, limit), this);
     }
 
     /**
@@ -417,6 +405,6 @@ abstract public class DbManPlus {
     @CallSuper
     public Cursor rawQuery(String sql, String[] selectionArgs) {
         SQLiteDatabase database = this.open();
-        return new DbManCursor(database.rawQuery(sql, selectionArgs), this);
+        return new DbCursor(database.rawQuery(sql, selectionArgs), this);
     }
 }

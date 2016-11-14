@@ -2,23 +2,20 @@ package com.vssh.dbmanplus;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.SQLException;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by varun on 24.08.15.
  *
  * Helper class for DbManPlus. Extend this for each table in database.
  */
-public abstract class DbProto {
+public abstract class DbModel<T extends DbItem> {
     private DbManPlus mDbManager;
-    //private static final String TAG = "ReactDbLib:DbProto";
 
-    public DbProto(DbManPlus dbManager) {
+    public DbModel(DbManPlus dbManager) {
         this.mDbManager = dbManager;
     }
 
@@ -51,6 +48,15 @@ public abstract class DbProto {
     }
 
     /**
+     * Insert into this table
+     * @param item an object of the appropriate type.
+     * @return row ID if successful, else -1
+     */
+    public long insert(T item) {
+        return insert(item.toContentValues(getTableColumns()));
+    }
+
+    /**
      * Insert multiple rows as one transaction
      * @param values a map from column names to new column values. null is a
      *            valid value that will be translated to NULL.
@@ -73,6 +79,20 @@ public abstract class DbProto {
      */
     public int update(ContentValues values, String where, String[] whereArgs) {
         return mDbManager.update(this.getTableName(), values, where, whereArgs);
+    }
+
+    /**
+     * Update rows in this table
+     * @param item an object of appropriate type.
+     * @param where the optional WHERE clause to apply when updating.
+     *            Passing null will update all rows.
+     * @param whereArgs You may include ?s in the where clause, which
+     *            will be replaced by the values from whereArgs. The values
+     *            will be bound as Strings.
+     * @return number of rows
+     */
+    public int update(T item, String where, String[] whereArgs) {
+        return mDbManager.update(this.getTableName(), item.toContentValues(getTableColumns()), where, whereArgs);
     }
 
     /**
@@ -153,11 +173,11 @@ public abstract class DbProto {
      * @param sortOrder How to order the rows, formatted as an SQL
      *   ORDER BY clause (excluding the ORDER BY itself). Passing null
      *   will use the default sort order, which may be unordered.
-     * @return list of Objects returned by {@link #itemFromCursor}
+     * @return list of Objects returned by {@link #getModelItem}
      */
-    public ArrayList queryAsList(String[] projection, String where, String[] whereArgs, String sortOrder) {
+    public ArrayList<T> queryAsList(String[] projection, String where, String[] whereArgs, String sortOrder) {
         Cursor cursor = this.query(projection, where, whereArgs, null, null, sortOrder, null);
-        ArrayList list = cursorToList(cursor);
+        ArrayList<T> list = cursorToList(cursor);
         cursor.close();
 
         return list;
@@ -187,29 +207,33 @@ public abstract class DbProto {
      *   will use the default sort order, which may be unordered.
      * @param limit Limits the number of rows returned by the query,
      *   formatted as LIMIT clause. Passing null denotes no LIMIT clause.
-     * @return list of Objects returned by {@link #itemFromCursor}
+     * @return list of Objects returned by {@link #getModelItem}
      */
-    public ArrayList queryAsList(String[] projection, String where, String[] whereArgs, @Nullable String groupBy,
+    public ArrayList<T> queryAsList(String[] projection, String where, String[] whereArgs, @Nullable String groupBy,
                         @Nullable String having, String sortOrder, @Nullable String limit) {
         Cursor cursor = mDbManager.query(this.getTableName(), projection, where, whereArgs, groupBy, having, sortOrder, limit);
-        ArrayList list = cursorToList(cursor);
+        ArrayList<T> list = cursorToList(cursor);
         cursor.close();
 
         return list;
     }
 
     /**
-     * Retrieve an Object list (as described in {@link #itemFromCursor})
+     * Retrieve an Object list (as described in {@link #getModelItem})
      * @param cursor input cursor
-     * @return list of Objects returned by {@link #itemFromCursor}
+     * @return list of Objects returned by {@link #getModelItem}
      */
-    public ArrayList cursorToList(Cursor cursor) {
-        ArrayList list = new ArrayList<>();
+    public ArrayList<T> cursorToList(Cursor cursor) {
+        ArrayList<T> list = new ArrayList<>();
         if(cursor.moveToFirst()) {
             while (!cursor.isAfterLast()) {
                 int pos = cursor.getPosition();
 
-                list.add(itemFromCursor(cursor));
+                T item = getModelItem();
+                if (item != null) {
+                    item.fromCursor(cursor, getTableColumns());
+                    list.add(item);
+                }
 
                 if(pos == cursor.getPosition()) {
                     cursor.moveToNext();
@@ -223,9 +247,16 @@ public abstract class DbProto {
     }
 
     /**
-     * Implement this function to allow forming a list of objects from cursor
-     * @param cursor input cursor
+     * Get a basic object of the correct type
      * @return object of desired type
      */
-    protected abstract Object itemFromCursor(Cursor cursor);
+    protected abstract @Nullable T getModelItem();
+
+
+    /**
+     * Get table columns as an array
+     * REMEMBER to include id column
+     * @return array of column names
+     */
+    protected abstract @NonNull String[] getTableColumns();
 }

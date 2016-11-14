@@ -8,14 +8,14 @@ import android.database.CursorWrapper;
  *
  * Cursor extension used with DbManPlus.
  */
-public class DbManCursor extends CursorWrapper {
+class DbCursor extends CursorWrapper {
     private DbManPlus mDbManager;
     /**
      * Creates a cursor wrapper.
      *
      * @param cursor The underlying cursor to wrap.
      */
-    public DbManCursor(Cursor cursor, DbManPlus dbManager) {
+    DbCursor(Cursor cursor, DbManPlus dbManager) {
         super(cursor);
         this.mDbManager = dbManager;
     }
