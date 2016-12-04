@@ -12,15 +12,29 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.support.annotation.CallSuper;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 
 abstract public class DbManPlus {
 
@@ -406,5 +420,156 @@ abstract public class DbManPlus {
     public Cursor rawQuery(String sql, String[] selectionArgs) {
         SQLiteDatabase database = this.open();
         return new DbCursor(database.rawQuery(sql, selectionArgs), this);
+    }
+
+    /**
+     * Export this database
+     * @param backupPath external path where to export
+     * @param salt encryption salt
+     * @param password encryption password
+     * @return database size
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     * @throws InvalidKeyException
+     */
+    public long exportDB(String backupPath, String salt, String password) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+        long transferred = 0;
+
+        //File sd = Environment.getExternalStorageDirectory();
+
+        String  currentDBPath= db.getPath();
+        File currentDB = new File(currentDBPath);
+        File backupDB = new File(backupPath);
+
+        FileInputStream src;
+        CipherOutputStream dst;
+        db.beginTransaction();
+
+        if(!backupDB.exists()) {
+            backupDB.createNewFile();
+        }
+
+        byte[] key = (salt + password).getBytes("UTF-8");
+        MessageDigest sha = MessageDigest.getInstance("SHA-1");
+        key = sha.digest(key);
+        key = Arrays.copyOf(key, 16); // use only first 128 bit
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
+
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
+
+        src = new FileInputStream(currentDB);
+        dst = new CipherOutputStream(new FileOutputStream(backupDB), cipher);
+
+        byte[] buffer = new byte[4 * 1024];
+        int read;
+
+        while ((read = src.read(buffer)) != -1) {
+                transferred += read;
+                dst.write(buffer, 0, read);
+
+        }
+        dst.flush();
+
+        db.endTransaction();
+
+        src.close();
+        dst.close();
+
+        return transferred;
+    }
+
+    /**
+     * Import to this database
+     * @param backupStream stream to write to database (NOTE: stream is closed here so no need to close outside)
+     * @param salt encryption salt
+     * @param password encryption password
+     * @return database size
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     * @throws InvalidKeyException
+     */
+    public long importDB(InputStream backupStream, String salt, String password) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+        long transferred = 0;
+
+        String  currentDBPath= db.getPath();
+        File currentDB  = new File(currentDBPath);
+        FileOutputStream dst = null;
+
+        db.beginTransaction();
+
+        byte[] key = (salt + password).getBytes("UTF-8");
+        MessageDigest sha = MessageDigest.getInstance("SHA-1");
+        key = sha.digest(key);
+        key = Arrays.copyOf(key, 16); // use only first 128 bit
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
+
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
+
+        CipherInputStream src = new CipherInputStream(backupStream, cipher);
+
+        byte[] buffer = new byte[4 * 1024];
+        int read;
+        boolean isFirstBlock = true;
+        boolean toContinue = true;
+
+        while (toContinue && (read = src.read(buffer)) != -1) {
+            if(isFirstBlock) {
+                toContinue = isValidSQLiteDb(buffer);
+                if(toContinue) {
+                    dst = new FileOutputStream(currentDB);
+                }
+                isFirstBlock = false;
+            }
+
+            if (toContinue) {
+                transferred += read;
+                dst.write(buffer, 0, read);
+            }
+        }
+
+        db.endTransaction();
+
+        if (dst != null) {
+            dst.flush();
+            dst.close();
+        }
+        src.close();
+
+
+        return transferred;
+    }
+
+    /**
+     * Import to this database
+     * @param backupPath path from which to read
+     * @param salt encryption salt
+     * @param password encryption password
+     * @return database size
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     * @throws InvalidKeyException
+     */
+    public long importDB(String backupPath, String salt, String password) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+        File backupDb = new File(backupPath);
+        FileInputStream backupStream = new FileInputStream(backupDb);
+        return importDB(backupStream, salt, password);
+    }
+
+    /**
+     * Check if database is valid SQLite 3 database (needs improvement to check schema)
+     * @param buf buffer containing the first few bytes (at least 16)
+     * @return true if database is valid
+     */
+    private boolean isValidSQLiteDb(byte[] buf) {
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+        result.write(buf, 0, 16);
+        String str = result.toString();
+        //Log.d("sqlite check", str);
+        return str.equalsIgnoreCase("SQLite format 3\u0000");
     }
 }
