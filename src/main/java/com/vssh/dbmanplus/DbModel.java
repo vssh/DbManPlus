@@ -13,7 +13,7 @@ import java.util.ArrayList;
  * Helper class for DbManPlus. Extend this for each table in database.
  */
 public abstract class DbModel<T extends DbItem> {
-    private DbManPlus mDbManager;
+    protected DbManPlus mDbManager;
 
     public DbModel(DbManPlus dbManager) {
         this.mDbManager = dbManager;
