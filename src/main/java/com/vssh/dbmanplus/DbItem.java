@@ -2,8 +2,8 @@ package com.vssh.dbmanplus;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Created by varun on 06.11.16.
